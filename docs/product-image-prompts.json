@@ -1,0 +1,75 @@
+{
+  "method": "Built-in image_gen",
+  "purpose": "Representative AI-generated food images for the local catalog; not photographs of the establishment.",
+  "promptBase": "Use case: photorealistic-natural. Asset type: landscape food photograph for a Bolivian café product catalog. Create one single natural editorial photograph of the following product. Scene: warm light brown wooden café table, soft ivory background and a subtle beige linen napkin, softly blurred background, daylight from the left, realistic gentle shadows. Composition: 3:2 horizontal photograph, product centered and fully visible with modest breathing room for responsive cropping, close-up eye-level or slight 30-degree overhead view appropriate to the product. Restrained natural warm tones, authentic materials and fine food details, appetizing and credible. No people, no hands, no text, no logos, no watermark, no collage, no split screen, no illustration, no cartoon, no 3D render. Subject: ",
+  "images": [
+    {
+      "file": "public/products/api-tradicional.webp",
+      "subject": "A tall clear faceted glass mug with a squared rounded glass handle and thick clear base, filled near the rim with hot deep purple Bolivian api morado. The drink is dense dark purple, natural tiny steam, no froth or latte art."
+    },
+    {
+      "file": "public/products/tojori.webp",
+      "subject": "A clear tall glass mug of real Bolivian tojorí without milk: muted yellow cream and light gray beige starchy cooked maize drink, irregular small broken cooked maize kernels and tiny brown husk flecks suspended throughout. Natural wet cereal texture, NOT orange or caramel, NOT green peas."
+    },
+    {
+      "file": "public/products/bunuelos.webp",
+      "subject": "Exactly four thin round Bolivian buñuelos stacked slightly offset on a rustic brown ceramic plate. Irregular golden fried dough edges, airy blistered surface, fine sugar crystals, true food photography, not donuts and no central holes."
+    },
+    {
+      "file": "public/products/pastel-de-queso.webp",
+      "subject": "Two traditional Bolivian cheese-filled pastries, golden thin crisp inflated dough, crimped edges, one gently opened to reveal melted white cheese, on a cream ceramic plate."
+    },
+    {
+      "file": "public/products/tojori-con-leche.webp",
+      "subject": "A clear glass mug of Bolivian tojorí with milk: creamy ivory pale beige thick cooked maize drink with visible small broken maize grains, soft natural steam."
+    },
+    {
+      "file": "public/products/arroz-con-leche.webp",
+      "subject": "A small ivory ceramic bowl of Bolivian arroz con leche, creamy rice pudding with clearly visible tender rice grains, light dusting of cinnamon and a small cinnamon stick."
+    },
+    {
+      "file": "public/products/chocolate-con-leche.webp",
+      "subject": "A cream ceramic cup and saucer of traditional hot chocolate with milk, smooth warm dark brown chocolate, a few chocolate bar pieces beside it. No marshmallows, no latte art."
+    },
+    {
+      "file": "public/products/cafe.webp",
+      "subject": "A small elegant white porcelain cup and saucer of freshly brewed black coffee, dark translucent coffee surface with subtle crema along the edge. A few coffee beans beside the cup."
+    },
+    {
+      "file": "public/products/cafe-con-leche.webp",
+      "subject": "A clear glass cup and small saucer of café con leche, natural milky caramel beige coffee with a little fine foam at the rim. No elaborate latte art."
+    },
+    {
+      "file": "public/products/te-y-mates.webp",
+      "subject": "A clear glass cup of warm amber herbal tea, a small unlabelled tea sachet and a few dried chamomile flowers nearby. Natural tea infusion, no cocktail garnishes."
+    },
+    {
+      "file": "public/products/jugos-del-valle.webp",
+      "subject": "A clear tall glass of fresh orange fruit juice and a small plain unlabelled clear juice bottle beside it, a cut orange nearby. No logos or brand text."
+    },
+    {
+      "file": "public/products/refresco-de-mocochinchi.webp",
+      "subject": "A clear tall glass of traditional Bolivian mocochinchi: translucent amber brown chilled dried-peach drink, a rehydrated dried peach visible at the bottom, tiny condensation droplets on glass."
+    },
+    {
+      "file": "public/products/pastel-de-queso-y-jamon.webp",
+      "subject": "Two golden thin-dough pastries filled with ham and cheese on an ivory ceramic plate, one cut open to show pink ham and melted white cheese. Bolivian breakfast pastry, not a croissant."
+    },
+    {
+      "file": "public/products/tawa-tawa.webp",
+      "subject": "A small ceramic plate of Bolivian tawa tawa, several thin golden fried rectangular and diamond-shaped dough pieces, lightly dusted with sugar, delicate crisp irregular puffed surfaces."
+    },
+    {
+      "file": "public/products/gordita-de-queso.webp",
+      "subject": "Three small plump golden pastries with crimped edges on a cream plate, one open to show generous melted white cheese filling. Small individual Bolivian breakfast pastries."
+    },
+    {
+      "file": "public/products/gordita-de-jamon.webp",
+      "subject": "Three small plump golden pastries with crimped edges on a cream plate, one cut open revealing generous diced pink ham and white cheese filling."
+    },
+    {
+      "file": "public/products/gordita-de-guayaba.webp",
+      "subject": "Three small golden plump pastries with crimped edges on a cream plate, one cut open showing a rich reddish guava paste filling. A small guava slice nearby."
+    }
+  ]
+}

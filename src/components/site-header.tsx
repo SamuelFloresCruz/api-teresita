@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
@@ -72,12 +73,15 @@ export function SiteHeader() {
     <>
       <header className="site-header">
         <div className="shell site-header__inner">
-          <Link className="brand" href="/" aria-label="Api Teresita, inicio">
-            <span className="brand__seal">AT</span>
-            <span className="brand__text">
-              <strong>Api Teresita</strong>
-              <small>Sabor tradicional</small>
-            </span>
+          <Link className="brand brand--header" href="/" aria-label="Api Teresita, inicio">
+            <Image
+              className="brand__logo"
+              src="/api-teresita-logo.png"
+              width={1536}
+              height={1024}
+              alt=""
+              preload
+            />
           </Link>
 
           <nav className="desktop-nav" aria-label="Navegación principal">

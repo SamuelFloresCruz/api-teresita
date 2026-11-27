@@ -5,7 +5,6 @@ import { formatPrice, type Product } from "@/data/products";
 import { AdminPageHeader } from "./admin-page-header";
 
 type PeriodType = "week" | "month" | "range" | "year";
-type Granularity = "day" | "month";
 type DashboardRow = {
   venta_id: string;
   producto_id: string;
@@ -17,18 +16,10 @@ type DashboardRow = {
 type Period = {
   startIso: string;
   endIso: string;
-  startKey: string;
-  endKey: string;
-  granularity: Granularity;
   title: string;
 };
 
 const chartColors = ["#6b2d5c", "#c47a31", "#698348", "#3f6f82", "#a44949", "#795a9d", "#9a7c35", "#4d7e73", "#bd526e", "#5374b8", "#8e633f", "#aa6f9e", "#4d897f", "#d08a51", "#626b9c", "#8d8b43", "#b6533f"];
-const chartWidth = 960;
-const chartHeight = 350;
-const chartMargin = { top: 24, right: 26, bottom: 54, left: 58 };
-const boliviaTimeZone = "America/La_Paz";
-const localDateFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: boliviaTimeZone, year: "numeric", month: "2-digit", day: "2-digit" });
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -71,47 +62,31 @@ function weekBounds(value: string) {
   return { start, end: shiftDay(start, 7) };
 }
 
+function shortenChartLabel(value: string, selectedCount: number) {
+  const maximum = selectedCount > 12 ? 8 : selectedCount > 8 ? 11 : selectedCount > 5 ? 14 : 19;
+  return value.length > maximum ? `${value.slice(0, maximum - 1)}…` : value;
+}
+
 function buildPeriod(type: PeriodType, week: string, month: string, rangeStart: string, rangeEnd: string, year: string): Period | null {
   const offset = "T00:00:00-04:00";
   if (type === "week") {
     const bounds = weekBounds(week);
     if (!bounds) return null;
-    return { startIso: `${bounds.start}${offset}`, endIso: `${bounds.end}${offset}`, startKey: bounds.start, endKey: bounds.end, granularity: "day", title: `Semana ${week.slice(-2)} de ${week.slice(0, 4)}` };
+    return { startIso: `${bounds.start}${offset}`, endIso: `${bounds.end}${offset}`, title: `Semana ${week.slice(-2)} de ${week.slice(0, 4)}` };
   }
   if (type === "month" && /^\d{4}-\d{2}$/.test(month)) {
     const end = shiftMonth(month, 1);
-    return { startIso: `${month}-01${offset}`, endIso: `${end}-01${offset}`, startKey: `${month}-01`, endKey: `${end}-01`, granularity: "day", title: new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`)) };
+    return { startIso: `${month}-01${offset}`, endIso: `${end}-01${offset}`, title: new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`)) };
   }
   if (type === "range" && /^\d{4}-\d{2}$/.test(rangeStart) && /^\d{4}-\d{2}$/.test(rangeEnd) && rangeStart <= rangeEnd) {
     const end = shiftMonth(rangeEnd, 1);
-    return { startIso: `${rangeStart}-01${offset}`, endIso: `${end}-01${offset}`, startKey: rangeStart, endKey: end, granularity: "month", title: `${rangeStart} a ${rangeEnd}` };
+    return { startIso: `${rangeStart}-01${offset}`, endIso: `${end}-01${offset}`, title: `${rangeStart} a ${rangeEnd}` };
   }
   if (type === "year" && /^\d{4}$/.test(year)) {
     const nextYear = String(Number(year) + 1);
-    return { startIso: `${year}-01-01${offset}`, endIso: `${nextYear}-01-01${offset}`, startKey: `${year}-01`, endKey: `${nextYear}-01`, granularity: "month", title: `Año ${year}` };
+    return { startIso: `${year}-01-01${offset}`, endIso: `${nextYear}-01-01${offset}`, title: `Año ${year}` };
   }
   return null;
-}
-
-function dateKey(iso: string, granularity: Granularity) {
-  const parts = Object.fromEntries(localDateFormatter.formatToParts(new Date(iso)).map((part) => [part.type, part.value]));
-  return granularity === "month" ? `${parts.year}-${parts.month}` : `${parts.year}-${parts.month}-${parts.day}`;
-}
-
-function buildBuckets(period: Period) {
-  const buckets: { key: string; label: string }[] = [];
-  if (period.granularity === "month") {
-    for (let cursor = period.startKey; cursor < period.endKey; cursor = shiftMonth(cursor, 1)) {
-      const date = new Date(`${cursor}-01T00:00:00Z`);
-      buckets.push({ key: cursor, label: new Intl.DateTimeFormat("es-BO", { month: "short", year: "2-digit", timeZone: "UTC" }).format(date).replace(" de ", " ") });
-    }
-    return buckets;
-  }
-  for (let cursor = period.startKey; cursor < period.endKey; cursor = shiftDay(cursor, 1)) {
-    const date = new Date(`${cursor}T00:00:00Z`);
-    buckets.push({ key: cursor, label: new Intl.DateTimeFormat("es-BO", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(date) });
-  }
-  return buckets;
 }
 
 export function AdminDashboard() {
@@ -142,7 +117,6 @@ export function AdminDashboard() {
         if (!response.ok) throw new Error(payload.error || "No se pudieron cargar los productos.");
         const availableProducts = payload.products ?? [];
         setProducts(availableProducts);
-        setSelectedProductIds(availableProducts.slice(0, 3).map((product) => product.id));
       } catch (caught) {
         if ((caught as Error).name !== "AbortError") setError(caught instanceof Error ? caught.message : "No se pudieron cargar los productos.");
       } finally {
@@ -177,25 +151,7 @@ export function AdminDashboard() {
   }, [period, selectedKey]);
 
   const productById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
-  const chart = useMemo(() => {
-    if (!period) return { buckets: [], series: [], maximum: 1 };
-    const buckets = buildBuckets(period);
-    const bucketIndex = new Map(buckets.map((bucket, index) => [bucket.key, index]));
-    const series = selectedProductIds.map((productId, index) => ({
-      productId,
-      name: productById.get(productId)?.name ?? rows.find((row) => row.producto_id === productId)?.nombre_producto ?? productId,
-      color: chartColors[index % chartColors.length],
-      values: Array.from({ length: buckets.length }, () => 0),
-    }));
-    const seriesById = new Map(series.map((item) => [item.productId, item]));
-    rows.forEach((row) => {
-      const index = bucketIndex.get(dateKey(row.fecha_venta, period.granularity));
-      const item = seriesById.get(row.producto_id);
-      if (index !== undefined && item) item.values[index] += row.cantidad;
-    });
-    return { buckets, series, maximum: Math.max(1, ...series.flatMap((item) => item.values)) };
-  }, [period, productById, rows, selectedProductIds]);
-
+  const productColorById = useMemo(() => new Map(products.map((product, index) => [product.id, chartColors[index % chartColors.length]])), [products]);
   const totalsByProduct = useMemo(() => selectedProductIds.map((productId) => {
     const productRows = rows.filter((row) => row.producto_id === productId);
     return {
@@ -209,8 +165,26 @@ export function AdminDashboard() {
   const totalUnits = rows.reduce((sum, row) => sum + row.cantidad, 0);
   const totalIncome = rows.reduce((sum, row) => sum + row.subtotal, 0);
   const totalSales = new Set(rows.map((row) => row.venta_id)).size;
-  const graphWidth = chartWidth - chartMargin.left - chartMargin.right;
-  const graphHeight = chartHeight - chartMargin.top - chartMargin.bottom;
+  const donutSegments = useMemo(() => {
+    const percent = selectedProductIds.length > 0 ? 100 / selectedProductIds.length : 0;
+    return totalsByProduct.map((item, index) => {
+      const offset = index * percent;
+      const middleAngle = -90 + (offset + percent / 2) * 3.6;
+      const radians = middleAngle * Math.PI / 180;
+      const rotation = middleAngle + 90 > 90 && middleAngle + 90 < 270 ? middleAngle + 270 : middleAngle + 90;
+      return {
+        ...item,
+        color: productColorById.get(item.id) ?? chartColors[index % chartColors.length],
+        percent,
+        dash: Math.min(100, percent + .18),
+        offset,
+        label: shortenChartLabel(item.name, selectedProductIds.length),
+        labelX: 210 + Math.cos(radians) * 158,
+        labelY: 210 + Math.sin(radians) * 158,
+        labelRotation: rotation,
+      };
+    });
+  }, [productColorById, selectedProductIds.length, totalsByProduct]);
 
   function toggleProduct(productId: string) {
     setSelectedProductIds((current) => current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId]);
@@ -231,13 +205,6 @@ export function AdminDashboard() {
           {periodType === "year" && <label>Año<input type="number" min="2020" max="2100" step="1" value={year} onChange={(event) => setYear(event.target.value)} /></label>}
           <div className="dashboard-filter__period-name"><span>Periodo</span><strong>{period?.title ?? "Revisa las fechas"}</strong></div>
         </div>
-        <div className="dashboard-products__header"><div><strong>Productos</strong><small>Selecciona uno o varios para compararlos.</small></div><div><button type="button" onClick={() => setSelectedProductIds(products.map((product) => product.id))}>Todos</button><button type="button" onClick={() => setSelectedProductIds([])}>Limpiar</button></div></div>
-        <div className="dashboard-products" aria-label="Productos incluidos">
-          {loadingProducts ? <p>Cargando productos…</p> : products.map((product) => {
-            const selected = selectedProductIds.includes(product.id);
-            return <label className={selected ? "is-selected" : undefined} key={product.id}><input type="checkbox" checked={selected} onChange={() => toggleProduct(product.id)} /><span>{product.name}</span><small>{formatPrice(product.price)}</small></label>;
-          })}
-        </div>
       </section>
 
       <section className="admin-stats admin-stats--three dashboard-stats" aria-label="Resumen del periodo">
@@ -247,39 +214,75 @@ export function AdminDashboard() {
       </section>
 
       <section className="dashboard-chart-card admin-card">
-        <header><div><p>Evolución</p><h2>Cantidad vendida por producto</h2></div><span>{loadingReport ? "Actualizando…" : period?.title}</span></header>
+        <header><div><p>Visualización circular</p><h2>Productos seleccionados y unidades vendidas</h2></div><span>{loadingReport ? "Actualizando…" : period?.title}</span></header>
         {error && <p className="admin-inline-error dashboard-chart__error" role="alert">{error}</p>}
-        {!selectedProductIds.length ? <div className="dashboard-chart__empty"><strong>Selecciona al menos un producto</strong><span>La gráfica aparecerá aquí.</span></div> : !loadingReport && rows.length === 0 ? <div className="dashboard-chart__empty"><strong>No hay ventas en este periodo</strong><span>Prueba otro producto o cambia las fechas.</span></div> : (
-          <div className={`dashboard-chart${loadingReport ? " is-loading" : ""}`}>
-            <div className="dashboard-chart__legend">{chart.series.map((item) => <span key={item.productId}><i style={{ backgroundColor: item.color }} />{item.name}</span>)}</div>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={`Gráfica de unidades vendidas, ${period?.title ?? "periodo seleccionado"}`}>
-              {[0, 1, 2, 3, 4].map((tick) => {
-                const value = Math.round((chart.maximum / 4) * (4 - tick));
-                const y = chartMargin.top + (graphHeight / 4) * tick;
-                return <g key={tick}><line x1={chartMargin.left} y1={y} x2={chartWidth - chartMargin.right} y2={y} /><text x={chartMargin.left - 12} y={y + 4} textAnchor="end">{value}</text></g>;
-              })}
-              {chart.buckets.map((bucket, index) => {
-                const divisor = Math.max(1, Math.ceil(chart.buckets.length / 8));
-                if (index % divisor !== 0 && index !== chart.buckets.length - 1) return null;
-                const x = chartMargin.left + (chart.buckets.length === 1 ? graphWidth / 2 : (index / (chart.buckets.length - 1)) * graphWidth);
-                return <text className="dashboard-chart__x-label" x={x} y={chartHeight - 18} textAnchor="middle" key={bucket.key}>{bucket.label}</text>;
-              })}
-              {chart.series.map((item) => {
-                const points = item.values.map((value, index) => {
-                  const x = chartMargin.left + (item.values.length === 1 ? graphWidth / 2 : (index / (item.values.length - 1)) * graphWidth);
-                  const y = chartMargin.top + graphHeight - (value / chart.maximum) * graphHeight;
-                  return `${x},${y}`;
-                }).join(" ");
-                return <g key={item.productId}><polyline points={points} fill="none" stroke={item.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />{item.values.map((value, index) => {
-                  const x = chartMargin.left + (item.values.length === 1 ? graphWidth / 2 : (index / (item.values.length - 1)) * graphWidth);
-                  const y = chartMargin.top + graphHeight - (value / chart.maximum) * graphHeight;
-                  return <circle cx={x} cy={y} r="4.5" fill={item.color} stroke="#fff" strokeWidth="2" key={`${item.productId}-${index}`}><title>{`${item.name}: ${value} unidades · ${chart.buckets[index]?.label}`}</title></circle>;
-                })}</g>;
-              })}
-            </svg>
+        <div className="dashboard-chart-products">
+          <div className="dashboard-products__header">
+            <div><strong>Seleccionar productos</strong><small>Cada producto añade un nuevo espacio de color al círculo.</small></div>
+            <div>
+              <button type="button" disabled={loadingProducts || selectedProductIds.length === products.length} onClick={() => setSelectedProductIds(products.map((product) => product.id))}>Seleccionar todo</button>
+              <button type="button" disabled={!selectedProductIds.length} onClick={() => setSelectedProductIds([])}>Limpiar selección</button>
+            </div>
           </div>
-        )}
-        {!!totalsByProduct.length && <div className="dashboard-ranking"><div className="dashboard-ranking__head"><span>Producto</span><span>Ventas</span><span>Unidades</span></div>{totalsByProduct.map((item) => <div key={item.id}><span><i style={{ backgroundColor: chartColors[selectedProductIds.indexOf(item.id) % chartColors.length] }} />{item.name}</span><span>{item.sales}</span><strong>{item.units}</strong></div>)}</div>}
+          <div className="dashboard-products" aria-label="Productos incluidos">
+            {loadingProducts ? <p>Cargando productos…</p> : products.map((product) => {
+              const selected = selectedProductIds.includes(product.id);
+              const color = productColorById.get(product.id) ?? chartColors[0];
+              return <label className={selected ? "is-selected" : undefined} key={product.id}>
+                <input type="checkbox" checked={selected} onChange={() => toggleProduct(product.id)} />
+                <i className="dashboard-product-color" style={{ backgroundColor: color }} />
+                <span>{product.name}</span>
+                <small>{formatPrice(product.price)}</small>
+              </label>;
+            })}
+          </div>
+        </div>
+        <div className={`dashboard-chart${loadingReport ? " is-loading" : ""}`}>
+            <div className="dashboard-donut">
+              <div className="dashboard-donut__visual">
+                <svg viewBox="0 0 420 420" role="img" aria-label={`Gráfica circular de unidades vendidas, ${period?.title ?? "periodo seleccionado"}`}>
+                  <defs>
+                    <filter id="dashboard-donut-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feDropShadow dx="0" dy="13" stdDeviation="13" floodColor="#321527" floodOpacity=".22" />
+                    </filter>
+                  </defs>
+                  <circle className="dashboard-donut__shadow" cx="210" cy="210" r="158" />
+                  <circle className="dashboard-donut__track" cx="210" cy="210" r="158" pathLength="100" />
+                  {donutSegments.map((item) => (
+                    <circle
+                      className="dashboard-donut__segment"
+                      cx="210"
+                      cy="210"
+                      r="158"
+                      pathLength="100"
+                      fill="none"
+                      stroke={item.color}
+                      strokeDasharray={`${item.dash} ${100 - item.dash}`}
+                      strokeDashoffset={-item.offset}
+                      key={item.id}
+                    >
+                      <title>{`${item.name}: ${item.percent.toFixed(1)} %`}</title>
+                    </circle>
+                  ))}
+                  {donutSegments.map((item) => (
+                    <g className="dashboard-donut__segment-copy" transform={`translate(${item.labelX} ${item.labelY}) rotate(${item.labelRotation})`} key={`label-${item.id}`}>
+                      <text textAnchor="middle" y="-3">{item.label}</text>
+                      <text className="dashboard-donut__segment-percent" textAnchor="middle" y="13">{item.percent.toFixed(Number.isInteger(item.percent) ? 0 : 1)}%</text>
+                    </g>
+                  ))}
+                  <circle className="dashboard-donut__center" cx="210" cy="210" r="118" fill="#fff" />
+                  <text className="dashboard-donut__center-label" x="210" y="182" textAnchor="middle">TOTAL DE PRODUCTOS</text>
+                  <text className="dashboard-donut__center-value" x="210" y="235" textAnchor="middle">{totalUnits}</text>
+                  <text className="dashboard-donut__center-unit" x="210" y="261" textAnchor="middle">VENDIDOS</text>
+                </svg>
+              </div>
+              <div className="dashboard-ranking dashboard-ranking--side">
+                <div className="dashboard-ranking__head"><span>Producto</span><span>Ventas</span><span>Unidades</span></div>
+                {totalsByProduct.length ? totalsByProduct.map((item) => <div key={item.id}><span><i style={{ backgroundColor: productColorById.get(item.id) ?? chartColors[0] }} />{item.name}</span><span>{item.sales}</span><strong>{item.units}</strong></div>) : <div className="dashboard-ranking__empty"><span>Selecciona productos para ver el detalle.</span></div>}
+              </div>
+            </div>
+        </div>
+        {!!selectedProductIds.length && !loadingReport && rows.length === 0 && <p className="dashboard-chart__notice">Los productos seleccionados todavía no tienen ventas en este periodo, pero conservan su espacio en el círculo.</p>}
       </section>
     </>
   );
